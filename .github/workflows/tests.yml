@@ -38,7 +38,7 @@ jobs:
 
       - name: API bağımlılıklarını kur
         working-directory: ./api
-        run: pip install -r requirements-dev.txt
+        run: pip install -r api/requirements-dev.txt
 
       - name: CI veritabanını hazırla (veri yükle + readonly rol)
         working-directory: ./db
