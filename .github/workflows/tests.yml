@@ -1,0 +1,66 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ci_pass
+          POSTGRES_DB: churn_analytics_ci
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      mongo:
+        image: mongo:7
+        ports:
+          - 27019:27017
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: API bağımlılıklarını kur
+        working-directory: ./api
+        run: pip install -r requirements-dev.txt
+
+      - name: CI veritabanını hazırla (veri yükle + readonly rol)
+        working-directory: ./db
+        env:
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ci_pass
+          POSTGRES_DB: churn_analytics_ci
+          POSTGRES_PORT: 5433
+        run: |
+          pip install pandas sqlalchemy psycopg2-binary python-dotenv
+          python load_data.py
+          PGPASSWORD=ci_pass psql -h localhost -p 5433 -U ci_user -d churn_analytics_ci -c "
+            CREATE ROLE readonly_copilot WITH LOGIN PASSWORD 'ci_readonly';
+            GRANT CONNECT ON DATABASE churn_analytics_ci TO readonly_copilot;
+            GRANT USAGE ON SCHEMA public TO readonly_copilot;
+            GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly_copilot;
+          "
+
+      - name: pytest çalıştır
+        working-directory: ./api
+        env:
+          MOCK_LLM: "true"
+          READONLY_DATABASE_URL: postgresql+psycopg2://readonly_copilot:ci_readonly@localhost:5433/churn_analytics_ci
+          MONGO_URI: mongodb://localhost:27019
+        run: pytest -v

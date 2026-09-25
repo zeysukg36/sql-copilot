@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: sqlcopilot_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - sqlcopilot_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:7
+    container_name: sqlcopilot_mongo
+    restart: unless-stopped
+    ports:
+      - "${MONGO_PORT}:27017"
+    volumes:
+      - sqlcopilot_mongo_data:/data/db
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: sqlcopilot_api
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      READONLY_DATABASE_URL: postgresql+psycopg2://readonly_copilot:${READONLY_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      MONGO_URI: mongodb://mongo:27017
+    ports:
+      - "${API_PORT}:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_started
+
+volumes:
+  sqlcopilot_pg_data:
+  sqlcopilot_mongo_data:
