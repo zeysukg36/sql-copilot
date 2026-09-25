@@ -1,4 +1,0 @@
-# api/requirements-dev.txt
-pytest==8.3.3
-httpx
--r requirements.txt

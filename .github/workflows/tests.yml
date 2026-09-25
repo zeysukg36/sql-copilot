@@ -63,4 +63,4 @@ jobs:
           MOCK_LLM: "true"
           READONLY_DATABASE_URL: postgresql+psycopg2://readonly_copilot:ci_readonly@localhost:5433/churn_analytics_ci
           MONGO_URI: mongodb://localhost:27019
-        run: pytest -v# Trigger Run 2
+        run: pytest -v
