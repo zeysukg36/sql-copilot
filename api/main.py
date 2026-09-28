@@ -15,7 +15,14 @@ app = FastAPI(title="SQL Copilot API", version="1.0.0")
 async def ask(request: AskRequest):
     start = time.perf_counter()
 
-    sql, usage = generate_sql(request.question)
+    try:
+        sql, usage = generate_sql(request.question)
+    except Exception as e:
+        print(f"[WARN] LLM çağrısı başarısız: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="LLM servisi şu an yanıt vermiyor (günlük kota dolmuş olabilir). Lütfen daha sonra tekrar deneyin.",
+        )
 
     try:
         validate_sql_is_safe(sql)
