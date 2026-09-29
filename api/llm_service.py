@@ -6,7 +6,7 @@ from database import get_schema_description
 import os
 
 MOCK_MODE = os.getenv("MOCK_LLM", "false").lower() == "true"
-MOCK_SQL_RESPONSE = 'SELECT COUNT(*) FROM customers WHERE "Contract" = \'Two year\' LIMIT 10'
+MOCK_SQL_RESPONSE = "SELECT COUNT(*) FROM customers WHERE contract = 'Two year' LIMIT 10"
 
 client = genai.Client()  # GEMINI_API_KEY ortam değişkeninden otomatik okunur
 
