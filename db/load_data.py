@@ -17,6 +17,7 @@ engine = create_engine(admin_url)
 
 df = pd.read_csv("../data/WA_Fn-UseC_-Telco-Customer-Churn.csv")
 df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce").fillna(0)
+df.columns = df.columns.str.lower()
 
 df.to_sql("customers", engine, if_exists="replace", index=False)
 print(f"✅ {len(df)} satır 'customers' tablosuna yüklendi.")
